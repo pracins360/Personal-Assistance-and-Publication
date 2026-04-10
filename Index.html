@@ -1,0 +1,200 @@
+import React, { useMemo, useState } from "react"; import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"; import { Button } from "@/components/ui/button"; import { Input } from "@/components/ui/input"; import { Label } from "@/components/ui/label"; import { Textarea } from "@/components/ui/textarea"; import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"; import { Download, MessageCircle, Contact, RefreshCcw, QrCode } from "lucide-react"; import QRCode from "qrcode";
+
+function cleanPhone(phone: string) { return (phone || "").replace(/[^\d]/g, ""); }
+
+function buildWhatsappLink(phone: string, message: string) { const p = cleanPhone(phone); const m = encodeURIComponent(message || ""); return https://wa.me/${p}${m ? ?text=${m} : ""}; }
+
+function buildVCard(data: { name: string; role: string; phone: string; email: string; address: string; website: string; }) { return [ "BEGIN:VCARD", "VERSION:3.0", FN:${data.name || ""}, data.role ? TITLE:${data.role} : "", data.phone ? TEL:+${cleanPhone(data.phone)} : "", data.email ? EMAIL:${data.email} : "", data.address ? ADR:;;${data.address};;;; : "", data.website ? URL:${data.website} : "", "END:VCARD", ] .filter(Boolean) .join("\n"); }
+
+async function makeQr(value: string) { return QRCode.toDataURL(value, { width: 900, margin: 2, errorCorrectionLevel: "H", color: { dark: "#000000", light: "#FFFFFF" }, }); }
+
+function downloadDataUrl(dataUrl: string, filename: string) { const a = document.createElement("a"); a.href = dataUrl; a.download = filename; a.click(); }
+
+export default function QRFormGeneratorApp() { const [waPhone, setWaPhone] = useState("59995120536"); const [waMessage, setWaMessage] = useState( "I saw your publication about easy life with QR codes. Can I have more info please?" ); const [waSlogan, setWaSlogan] = useState("Make your life easy with QR codes and Personal Ledger."); const [waQr, setWaQr] = useState("");
+
+const [name, setName] = useState("Purcy Cicilia"); const [role, setRole] = useState("Instructor"); const [phone, setPhone] = useState("59995120536"); const [email, setEmail] = useState("pracins@yahoo.com"); const [address, setAddress] = useState("Zuid-Choloma 41"); const [website, setWebsite] = useState(""); const [vSlogan, setVSlogan] = useState("Simple. Personal. Ready to scan."); const [vcardQr, setVcardQr] = useState("");
+
+const whatsappLink = useMemo(() => buildWhatsappLink(waPhone, waMessage), [waPhone, waMessage]); const vcardText = useMemo( () => buildVCard({ name, role, phone, email, address, website }), [name, role, phone, email, address, website] );
+
+const generateWhatsApp = async () => { if (!cleanPhone(waPhone)) return alert("Enter a valid phone number."); const qr = await makeQr(whatsappLink); setWaQr(qr); };
+
+const generateVCard = async () => { if (!name.trim()) return alert("Enter a name."); const qr = await makeQr(vcardText); setVcardQr(qr); };
+
+const fillDemo = () => { setWaPhone("59995120536"); setWaMessage("I saw your publication about easy life with QR codes. Can I have more info please?"); setWaSlogan("Make your life easy with QR codes and Personal Ledger.");
+
+setName("Purcy Cicilia");
+setRole("Instructor");
+setPhone("59995120536");
+setEmail("pracins@yahoo.com");
+setAddress("Zuid-Choloma 41");
+setWebsite("");
+setVSlogan("Simple. Personal. Ready to scan.");
+
+};
+
+return ( <div className="min-h-screen bg-slate-50 p-4 md:p-8"> <div className="mx-auto max-w-6xl space-y-6"> <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between"> <div> <h1 className="text-3xl font-bold tracking-tight">QR Form Generator</h1> <p className="text-slate-600">Create real WhatsApp.me and vCard QR codes from a simple form.</p> </div> <Button onClick={fillDemo} variant="outline" className="rounded-2xl"> <RefreshCcw className="mr-2 h-4 w-4" /> Load Demo Data </Button> </div>
+
+<Tabs defaultValue="whatsapp" className="space-y-6">
+      <TabsList className="grid w-full grid-cols-2 rounded-2xl">
+        <TabsTrigger value="whatsapp">WhatsApp QR</TabsTrigger>
+        <TabsTrigger value="vcard">vCard QR</TabsTrigger>
+      </TabsList>
+
+      <TabsContent value="whatsapp" className="grid gap-6 lg:grid-cols-2">
+        <Card className="rounded-3xl shadow-sm">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-xl">
+              <MessageCircle className="h-5 w-5" /> WhatsApp.me QR
+            </CardTitle>
+            <CardDescription>Fill the form and generate a real WhatsApp QR code.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label>Phone</Label>
+              <Input value={waPhone} onChange={(e) => setWaPhone(e.target.value)} placeholder="59995120536" />
+            </div>
+            <div className="space-y-2">
+              <Label>Preset Message</Label>
+              <Textarea
+                value={waMessage}
+                onChange={(e) => setWaMessage(e.target.value)}
+                placeholder="Write the message that opens in WhatsApp"
+                className="min-h-[110px]"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Slogan / Title</Label>
+              <Input
+                value={waSlogan}
+                onChange={(e) => setWaSlogan(e.target.value)}
+                placeholder="Make your life easy with QR codes and Personal Ledger."
+              />
+            </div>
+            <div className="flex flex-wrap gap-3 pt-2">
+              <Button onClick={generateWhatsApp} className="rounded-2xl">
+                <QrCode className="mr-2 h-4 w-4" /> Create WhatsApp QR
+              </Button>
+              {waQr && (
+                <Button
+                  variant="outline"
+                  className="rounded-2xl"
+                  onClick={() => downloadDataUrl(waQr, "whatsapp-qr.png")}
+                >
+                  <Download className="mr-2 h-4 w-4" /> Download PNG
+                </Button>
+              )}
+            </div>
+            <div className="rounded-2xl bg-slate-100 p-3 text-sm text-slate-700 break-all">
+              <span className="font-semibold">Live link:</span> {whatsappLink}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="rounded-3xl shadow-sm">
+          <CardHeader>
+            <CardTitle className="text-xl">Preview</CardTitle>
+            <CardDescription>{waSlogan || "Your WhatsApp QR preview will appear here."}</CardDescription>
+          </CardHeader>
+          <CardContent className="flex min-h-[420px] flex-col items-center justify-center gap-4">
+            {waQr ? (
+              <>
+                <img src={waQr} alt="WhatsApp QR" className="w-full max-w-sm rounded-3xl border bg-white p-4" />
+                <p className="text-center text-sm text-slate-600">Test before using in Canva or printing.</p>
+              </>
+            ) : (
+              <div className="rounded-2xl border border-dashed p-10 text-center text-slate-500">
+                No QR yet. Fill the form and press <span className="font-semibold">Create WhatsApp QR</span>.
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </TabsContent>
+
+      <TabsContent value="vcard" className="grid gap-6 lg:grid-cols-2">
+        <Card className="rounded-3xl shadow-sm">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-xl">
+              <Contact className="h-5 w-5" /> vCard QR
+            </CardTitle>
+            <CardDescription>Fill the contact fields and generate a real vCard QR code.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="space-y-2">
+                <Label>Name</Label>
+                <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Purcy Cicilia" />
+              </div>
+              <div className="space-y-2">
+                <Label>Role</Label>
+                <Input value={role} onChange={(e) => setRole(e.target.value)} placeholder="Instructor" />
+              </div>
+            </div>
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="space-y-2">
+                <Label>Phone</Label>
+                <Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="59995120536" />
+              </div>
+              <div className="space-y-2">
+                <Label>Email</Label>
+                <Input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="name@email.com" />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Address</Label>
+              <Input value={address} onChange={(e) => setAddress(e.target.value)} placeholder="Street, city" />
+            </div>
+            <div className="space-y-2">
+              <Label>Website (optional)</Label>
+              <Input value={website} onChange={(e) => setWebsite(e.target.value)} placeholder="https://example.com" />
+            </div>
+            <div className="space-y-2">
+              <Label>Slogan / Title</Label>
+              <Input value={vSlogan} onChange={(e) => setVSlogan(e.target.value)} placeholder="Simple. Personal. Ready to scan." />
+            </div>
+            <div className="flex flex-wrap gap-3 pt-2">
+              <Button onClick={generateVCard} className="rounded-2xl">
+                <QrCode className="mr-2 h-4 w-4" /> Create vCard QR
+              </Button>
+              {vcardQr && (
+                <Button
+                  variant="outline"
+                  className="rounded-2xl"
+                  onClick={() => downloadDataUrl(vcardQr, "vcard-qr.png")}
+                >
+                  <Download className="mr-2 h-4 w-4" /> Download PNG
+                </Button>
+              )}
+            </div>
+            <div className="rounded-2xl bg-slate-100 p-3 text-sm text-slate-700 whitespace-pre-wrap break-all">
+              <span className="font-semibold">Encoded vCard:</span>{"\n"}{vcardText}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="rounded-3xl shadow-sm">
+          <CardHeader>
+            <CardTitle className="text-xl">Preview</CardTitle>
+            <CardDescription>{vSlogan || "Your vCard QR preview will appear here."}</CardDescription>
+          </CardHeader>
+          <CardContent className="flex min-h-[420px] flex-col items-center justify-center gap-4">
+            {vcardQr ? (
+              <>
+                <img src={vcardQr} alt="vCard QR" className="w-full max-w-sm rounded-3xl border bg-white p-4" />
+                <div className="text-center text-sm text-slate-600">
+                  <p className="font-medium">{name}</p>
+                  <p>{role}</p>
+                </div>
+              </>
+            ) : (
+              <div className="rounded-2xl border border-dashed p-10 text-center text-slate-500">
+                No QR yet. Fill the form and press <span className="font-semibold">Create vCard QR</span>.
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </TabsContent>
+    </Tabs>
+  </div>
+</div>
+
+); }
